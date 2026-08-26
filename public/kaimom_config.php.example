@@ -1,0 +1,41 @@
+<?php
+/* Kurage AI MOM (kaimom) 設定。このファイルを kaimom_config.php にコピーして編集 */
+
+/* ログインパスワード(どちらか。HASHが優先。HASHは password_hash() で生成) */
+define('KAIMOM_PASSWORD', 'change-me');
+// define('KAIMOM_PASSWORD_HASH', '$2y$10$...');
+
+/* 画面 */
+define('KAIMOM_TITLE', 'Kurage AI議事録作成');
+define('KAIMOM_BRAND_COLOR', '#1f6f78');
+
+/* データ保存先(このフォルダごとバックアップ) */
+define('KAIMOM_DATA_DIR', __DIR__ . '/kaimom_data');
+
+/* ===== 文字起こし =====
+ * local = 同じサーバーの whisper.cpp(推奨・音声が外に出ない)
+ *         worker を動かすこと: php scripts/kaimom_worker.php
+ * relay = 中継ユニット(共用サーバー等でexecできない場合)      */
+define('KAIMOM_TRANSCRIBE', 'local');
+define('KAIMOM_WHISPER_BIN', '/usr/local/bin/whisper-cli');
+define('KAIMOM_WHISPER_MODEL', '/usr/local/share/kaimom/ggml-large-v3-turbo.bin');
+define('KAIMOM_WHISPER_THREADS', 8);       // CPUコア数に合わせる
+define('KAIMOM_FFMPEG', 'ffmpeg');         // m4a等の変換に使用(無ければwav/mp3/flacのみ)
+
+/* relayモードのとき */
+// define('KAIMOM_RELAY_URL', 'https://example.com:18344');
+// define('KAIMOM_RELAY_TOKEN', 'secret');
+
+/* ===== 要約LLM(下書き用・任意) =====
+ * 'ollama' = 自社サーバーのOllama(推奨: gemma等。テキストも外に出ない)
+ * 'openai' = OpenAI互換API(KAIMOM_LLM_KEY必須)
+ * ''       = LLMなし(文字起こしのみ。議事録欄は手入力) */
+define('KAIMOM_LLM_KIND', 'ollama');
+define('KAIMOM_LLM_URL', 'http://127.0.0.1:11434');
+define('KAIMOM_LLM_MODEL', 'gemma4:12b-it-qat');
+// define('KAIMOM_LLM_KEY', 'sk-...');
+
+/* 制限 */
+define('KAIMOM_MAX_UPLOAD_MB', 200);
+define('KAIMOM_RATE_PER_HOUR', 20);
+define('KAIMOM_DEMO', false);

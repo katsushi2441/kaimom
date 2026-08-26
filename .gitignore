@@ -1,0 +1,7 @@
+vendor/
+models
+outputs/
+.env
+*.sqlite
+public/kaimom_config.php
+public/kaimom_data/

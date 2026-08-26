@@ -1,0 +1,12 @@
+[Unit]
+Description=kaimom demo whisper relay (audio -> whisper.cpp large-v3-turbo, port 18344)
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/kojima/work/kaimom/relay/kaimom_whisper_relay.py
+EnvironmentFile=/home/kojima/work/kaimom/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
