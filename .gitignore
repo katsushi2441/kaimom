@@ -5,3 +5,4 @@ outputs/
 *.sqlite
 public/kaimom_config.php
 public/kaimom_data/
+__pycache__/

@@ -31,6 +31,18 @@ RATE_PER_HOUR = int(os.environ.get("KAIMOM_RELAY_RATE", "12"))
 MAX_BODY = int(os.environ.get("KAIMOM_RELAY_MAX_MB", "20")) * 1024 * 1024
 MAX_AUDIO_SEC = int(os.environ.get("KAIMOM_RELAY_MAX_SEC", "900"))  # デモは15分まで
 
+# 音声区間検出(VAD)。同梱の whisper.cpp が silero VAD に対応しているので、
+# モデルを置いてフラグを渡すだけで効く。既定で有効。
+#
+# 実測(2026-08-31, 発話96秒+無音105秒=201秒の会議音声):
+#   無効 320.9秒 → 有効 92.4秒（3.5倍速）
+#   無効だと30秒の無音区間2か所に「ご視聴ありがとうございました」が出た。
+#   Whisperの既知の幻覚で、議事録としては実害が大きい。有効にすると消える。
+#   句読点と文の切れ目も改善し、取りこぼしていた語も拾えた。
+# 切るときは KAIMOM_WHISPER_VAD=0。モデルが無い場合は自動で無効になる。
+VAD_MODEL = os.environ.get("KAIMOM_WHISPER_VAD_MODEL", "/mnt/data/kaimom/models/ggml-silero-v5.1.2.bin")
+USE_VAD = os.environ.get("KAIMOM_WHISPER_VAD", "1") != "0" and os.path.exists(VAD_MODEL)
+
 jobs = {}          # id -> dict(status,text,segments,duration,error,ts,path)
 job_q = queue.Queue()
 hits = {}          # ip -> [timestamps]
@@ -71,9 +83,12 @@ def transcribe(path):
                     "-ar", "16000", "-ac", "1", "-t", str(MAX_AUDIO_SEC), "-f", "wav", wav],
                    check=True, timeout=300)
     of = path + ".whisper"
-    subprocess.run([WHISPER_BIN, "-m", WHISPER_MODEL, "-l", "ja", "-t", str(THREADS),
-                    "-oj", "-of", of, "--no-prints", wav],
-                   check=True, timeout=3600,
+    args = [WHISPER_BIN, "-m", WHISPER_MODEL, "-l", "ja", "-t", str(THREADS),
+            "-oj", "-of", of, "--no-prints"]
+    if USE_VAD:
+        args += ["--vad", "-vm", VAD_MODEL]
+    args.append(wav)
+    subprocess.run(args, check=True, timeout=3600,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     with open(of + ".json", encoding="utf-8") as f:
         d = json.load(f)
@@ -204,7 +219,8 @@ def main():
     threading.Thread(target=worker_loop, daemon=True).start()
     threading.Thread(target=cleanup_loop, daemon=True).start()
     srv = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), H)
-    print(f"[kaimom-relay] listening :{PORT} model={os.path.basename(WHISPER_MODEL)}", flush=True)
+    print(f"[kaimom-relay] listening :{PORT} model={os.path.basename(WHISPER_MODEL)} "
+          f"vad={'on' if USE_VAD else 'off'}", flush=True)
     srv.serve_forever()
 
 
