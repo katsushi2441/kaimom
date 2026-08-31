@@ -42,6 +42,13 @@ if (!defined('KAIMOM_TRANSCRIBE'))    { define('KAIMOM_TRANSCRIBE', 'local'); }
 if (!defined('KAIMOM_WHISPER_BIN'))   { define('KAIMOM_WHISPER_BIN', '/usr/local/bin/whisper-cli'); }
 if (!defined('KAIMOM_WHISPER_MODEL')) { define('KAIMOM_WHISPER_MODEL', '/usr/local/share/kaimom/ggml-large-v3-turbo.bin'); }
 if (!defined('KAIMOM_WHISPER_THREADS')) { define('KAIMOM_WHISPER_THREADS', 4); }
+/* 音声区間検出(VAD)。無音を whisper に渡さないためのモデル。
+ * 会議録音は沈黙が長く、無音区間で whisper が実在しない発言を出力する
+ * (当社実測: 30秒の沈黙に「ご視聴ありがとうございました」、暗騒音入りでは
+ *  実在する語を組み合わせた偽の発言が出て、日付がすり替わった)。
+ * whisper.cpp の models/download-vad-model.sh で取得したモデルのパスを
+ * 設定すると、--vad が付いて無音が渡らなくなる。空なら従来どおり無効。 */
+if (!defined('KAIMOM_WHISPER_VAD_MODEL')) { define('KAIMOM_WHISPER_VAD_MODEL', ''); }
 if (!defined('KAIMOM_FFMPEG'))        { define('KAIMOM_FFMPEG', 'ffmpeg'); }
 if (!defined('KAIMOM_RELAY_URL'))     { define('KAIMOM_RELAY_URL', ''); }
 if (!defined('KAIMOM_RELAY_TOKEN'))   { define('KAIMOM_RELAY_TOKEN', ''); }
@@ -244,8 +251,11 @@ function km_transcribe_local($audioPath) {
     $cmd = escapeshellcmd(KAIMOM_WHISPER_BIN)
          . ' -m ' . escapeshellarg(KAIMOM_WHISPER_MODEL)
          . ' -l ja -t ' . (int)KAIMOM_WHISPER_THREADS
-         . ' -oj -of ' . escapeshellarg($of)
-         . ' --no-prints ' . escapeshellarg($wav) . ' 2>&1';
+         . ' -oj -of ' . escapeshellarg($of);
+    if (KAIMOM_WHISPER_VAD_MODEL !== '' && is_file(KAIMOM_WHISPER_VAD_MODEL)) {
+        $cmd .= ' --vad -vm ' . escapeshellarg(KAIMOM_WHISPER_VAD_MODEL);
+    }
+    $cmd .= ' --no-prints ' . escapeshellarg($wav) . ' 2>&1';
     exec($cmd, $out, $rc);
     if ($tmp) { @unlink($wav); }
     if ($rc !== 0 || !is_file($of . '.json')) {

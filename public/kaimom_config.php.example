@@ -22,6 +22,13 @@ define('KAIMOM_WHISPER_MODEL', '/usr/local/share/kaimom/ggml-large-v3-turbo.bin'
 define('KAIMOM_WHISPER_THREADS', 8);       // CPUコア数に合わせる
 define('KAIMOM_FFMPEG', 'ffmpeg');         // m4a等の変換に使用(無ければwav/mp3/flacのみ)
 
+/* 音声区間検出(VAD) — 設定を強く推奨します。
+ * 無音区間で whisper が「実在しない発言」を作る問題を止めます。
+ * 取得: cd /path/to/whisper.cpp/models && bash download-vad-model.sh silero-v5.1.2
+ * 空のまま or ファイルが無い場合は無効(従来どおり)。詳細は同梱の運用の落とし穴.md */
+define('KAIMOM_WHISPER_VAD_MODEL', '');
+// define('KAIMOM_WHISPER_VAD_MODEL', '/usr/local/share/kaimom/ggml-silero-v5.1.2.bin');
+
 /* relayモードのとき */
 // define('KAIMOM_RELAY_URL', 'https://example.com:18344');
 // define('KAIMOM_RELAY_TOKEN', 'secret');
