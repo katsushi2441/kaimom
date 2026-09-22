@@ -600,7 +600,7 @@ function km_page_head($title) {
 
 function km_page_foot() {
     echo '<p class="muted" style="margin:24px 0">Kurage AI MOM (Kurage AI議事録作成システム) — 文字起こしは whisper.cpp・確定は人。'
-       . '音声も議事録もこのサーバーから出ません。</p></main></body></html>';
+       . '音声も議事録もこのサーバーから出ません。</p></main>' . ((($_SERVER['HTTP_HOST'] ?? '') === 'proto.exbridge.jp') ? '<p style="text-align:center;font-size:13px;margin:14px 0;color:#5d6b7a">これはデモです。<a href="https://kappstore.exbridge.jp/app.php?id=cd1eda3248c87920&amp;ref=kaimom" target="_blank" rel="noopener">この製品をオンプレミスで導入する（商品ページ）</a></p>' : '') . '</body></html>';
 }
 
 function km_status_badge($st) {
