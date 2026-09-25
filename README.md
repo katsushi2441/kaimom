@@ -54,6 +54,30 @@ AI下書きは出てきません（人が確認していない文章を、AIに�
 
 v1に話者分離はありません。話者ラベルが必要な場合は「文字起こし全文」を人が編集して話者名を付けます。AIが話者をでっち上げるより、人が確定するほうが議事録としては正しい、という設計判断です。
 
+### 足せる見込み（2026-09-25 調査）
+
+NVIDIA が 2026-09-24 に **Nemotron 3 Diarization**（0.1B・最大8人・OpenMDW-1.1・商用可）を公開した。
+録音済み一括とストリーミングの両対応。DIHARD III の DER は 12.73%（従来 Streaming Sortformer v2.1 は 19.09%）。
+Whisper は話者を分けないので、ここに差せば埋まる。
+
+**ただし、そのまま日本語で使えるとは言えない。調べた3点:**
+
+1. **モデルカードに日本語の記載が1か所もない。** 学習データの言語は英語・中国語・ヒンディー語・
+   カンナダ語・テルグ語・ベンガル語ほか。`Japanese` の出現は 0 回。
+2. **日本語は相槌（「はい」「ええ」）が多く、短い発話が重なる。** 話者分離が最も苦手とする形なので、
+   言語非依存だから大丈夫、とは言い切れない。
+3. **transformers 5.17.0 では動かない。** `AutoProcessor.from_pretrained` が
+   `Unrecognized processing class` で落ちる。`config.json` の `model_type` は `nemotron3_diarization` で、
+   5.17.0 の `PROCESSOR_MAPPING_NAMES` に未登録（登録済みは `nemotron3_5_asr`・`nemotron_asr_streaming`）。
+   transformers を開発版から入れるか、`nemo-toolkit[asr]` が要る。
+   ※ `jevlocal/.venv`（torch 2.5.1+cu121・transformers 5.17.0）で実際に確認した。
+
+**検証に必要なもの:** 日本語の複数話者音声。`outputs/test_meeting_16k.wav` は単一話者の台本読み上げなので使えない。
+Voicebox（192.168.0.11:17493）は1声のみ、Audio8 は kurage 話者クローンのみ。素材から作る必要がある。
+
+商品ページ（kappstore `cd1eda3248c87920`）には、この3点を正直に書いたうえで
+「お客様の録音で先に試してから決める」としてバイブカスタマイズへ誘導している。
+
 ## 開発
 
 ```
